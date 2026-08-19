@@ -7,9 +7,17 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.exceptions import ValidationFailedError
 from app.schemas.availability import AvailabilityResponse
+from app.schemas.doctor import DoctorOut
 from app.services.booking_service import BookingService
 
 router = APIRouter(prefix="/doctors", tags=["doctors"])
+
+
+@router.get("", response_model=list[DoctorOut])
+def list_doctors(db: Session = Depends(get_db)):
+    """All doctors plus their weekly working hours (read-only, for the UI)."""
+    service = BookingService(db)
+    return service.list_doctors()
 
 
 @router.get("/{doctor_id}/availability", response_model=AvailabilityResponse)

@@ -27,6 +27,14 @@ class BookingService:
         self.doctors = DoctorRepository(db)
         self.patients = PatientRepository(db)
 
+    # ---------- read-only listings (used by the frontend) ----------
+
+    def list_doctors(self):
+        return self.doctors.list_all()
+
+    def list_patients(self):
+        return self.patients.list_all()
+
     # ---------- shared validation ----------
 
     def _get_doctor_or_404(self, doctor_id: int):

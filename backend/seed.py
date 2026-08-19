@@ -7,8 +7,7 @@ Usage: python seed.py
 """
 from datetime import time
 
-from app.core.database import Base, engine, SessionLocal
-from app import models
+from app.core.database import Base, SessionLocal, engine
 from app.models.doctor import Doctor, WorkingHours
 from app.models.patient import Patient
 

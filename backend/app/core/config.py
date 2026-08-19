@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     slot_duration_minutes: int = 30
     min_booking_notice_minutes: int = 60  # bonus requirement: 1-hour buffer
     environment: str = "development"
+    allowed_origins: str = "http://localhost:8080,http://localhost:5173,http://127.0.0.1:8080"
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
 
 settings = Settings()

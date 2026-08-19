@@ -101,10 +101,10 @@ function Index() {
   const patients = useQuery({ queryKey: ["patients"], queryFn: api.patients, retry: false });
 
   useEffect(() => {
-    if (!doctorId && doctors.data?.length) setDoctorId(String(doctors.data[0].id));
+    if (!doctorId && doctors.data?.[0]) setDoctorId(String(doctors.data[0].id));
   }, [doctors.data, doctorId]);
   useEffect(() => {
-    if (!patientId && patients.data?.length) setPatientId(String(patients.data[0].id));
+    if (!patientId && patients.data?.[0]) setPatientId(String(patients.data[0].id));
   }, [patients.data, patientId]);
 
   const availability = useQuery({
@@ -256,12 +256,12 @@ function Index() {
             </div>
           </div>
 
-          {selectedDoctor && selectedDoctor.working_hours.length > 0 && (
+          {selectedDoctor?.working_hours[0] && (
             <p className="mt-4 text-xs text-muted-foreground">
               Works {selectedDoctor.working_hours.length} day
               {selectedDoctor.working_hours.length > 1 ? "s" : ""} a week,{" "}
-              {selectedDoctor.working_hours[0].start_time.slice(0, 5)}–
-              {selectedDoctor.working_hours[0].end_time.slice(0, 5)} UTC.
+              {selectedDoctor.working_hours[0]!.start_time.slice(0, 5)}–
+              {selectedDoctor.working_hours[0]!.end_time.slice(0, 5)} UTC.
             </p>
           )}
         </section>

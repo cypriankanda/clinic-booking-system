@@ -190,13 +190,14 @@ Build check before deploying: `bun run build`.
      SQLAlchemy accepts but won't pin the driver; being explicit avoids surprises.
    - `ALLOWED_ORIGINS` = your deployed frontend URL, e.g. `https://your-app.lovable.app`
    - `ENVIRONMENT` = `production`
-5. Start command (Settings → Deploy): Railway picks up the `Procfile`:
-   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Binding `0.0.0.0` and
-   `$PORT` is required — `localhost:8000` will fail health checks.
+5. Start command: `backend/railway.json` sets it to
+   `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`,
+   so every deploy migrates first. (`Procfile` is the fallback.) Binding
+   `0.0.0.0` and `$PORT` is required — `localhost:8000` fails health checks.
+   The health check path is `/health`.
 6. Deploy: `railway up`, then **Settings → Networking → Generate Domain**.
-7. Run migrations and seed against production:
+7. Seed the demo data once against production (migrations already ran on deploy):
    ```bash
-   railway run alembic upgrade head
    railway run python seed.py
    ```
 8. Verify: `curl https://<your-domain>/health` and open `/docs`.
@@ -218,7 +219,7 @@ frontend URL to the backend's `ALLOWED_ORIGINS` and redeploy the backend.
 - Try booking the same slot twice → `409` with `SLOT_ALREADY_BOOKED`.
 - Put the live URL in the README's "Public URL" line, and add
   `DEPLOY_HOOK_URL` as a GitHub secret (Railway → Settings → Deploy Hook) so
-  `.github/workflows/deploy.yml` triggers deploys on merge to `main`.
+  `.github/workflows/ci-cd.yml` triggers deploys on merge to `main`.
 
 ---
 

@@ -173,7 +173,7 @@ sequential ones.
 **Public URL:** _add after deploying_
 
 **Branch that triggers deployment:** `main` — the `deploy` job in
-`.github/workflows/deploy.yml` runs only on a push to `main` (i.e., after a
+`.github/workflows/ci-cd.yml` runs only on a push to `main` (i.e., after a
 PR is merged), and only if the `test` job passes first.
 
 **What the pipeline does:**
@@ -193,5 +193,4 @@ SQLite file so the project runs with zero setup.
 
 ## Section 4 — AI Reflection
 
-_See separate note — written after completing the above, from my actual
-process._
+See [`../AI_REFLECTION.md`](../AI_REFLECTION.md) at the repo root.

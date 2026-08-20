@@ -219,7 +219,7 @@ frontend URL to the backend's `ALLOWED_ORIGINS` and redeploy the backend.
 - Try booking the same slot twice → `409` with `SLOT_ALREADY_BOOKED`.
 - Put the live URL in the README's "Public URL" line, and add
   `DEPLOY_HOOK_URL` as a GitHub secret (Railway → Settings → Deploy Hook) so
-  `.github/workflows/deploy.yml` triggers deploys on merge to `main`.
+  `.github/workflows/ci-cd.yml` triggers deploys on merge to `main`.
 
 ---
 

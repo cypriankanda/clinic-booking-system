@@ -8,10 +8,17 @@ Informatics backend take-home assessment**.
 |---|---|
 | **Public URL (API)** | [`https://clinic-booking-api-9ttn.onrender.com`](https://clinic-booking-api-9ttn.onrender.com) (`/docs` for Swagger, `/health` for liveness) |
 | **Public URL (frontend)** | [`https://clinic-booking-frontend-thxz.onrender.com`](https://clinic-booking-frontend-thxz.onrender.com) |
-| **Repository** | _add GitHub repo URL_ |
+| **Repository** | [https://github.com/cypriankanda/clinic-booking-system](https://github.com/cypriankanda/clinic-booking-system) |
 | **Hosting** | [Render](https://render.com) — API, frontend, and PostgreSQL all on Render's free tier |
 | **Section 4 reflection** | [`AI_REFLECTION.md`](./AI_REFLECTION.md) |
 | **Local + deploy walkthrough** | [`SETUP.md`](./SETUP.md) |
+
+> **Reviewing this live?** Both services are on Render's free tier, which
+> spins down after inactivity. **Open the [API URL](https://clinic-booking-api-9ttn.onrender.com/health)
+> first** and wait for it to respond (~30-60s on a cold start) — that wakes
+> the backend so the frontend's requests succeed instead of timing out.
+> Swagger docs are at [`/docs`](https://clinic-booking-api-9ttn.onrender.com/docs)
+> on the same API URL.
 
 ```
 backend/   FastAPI REST API (the assessment deliverable)
@@ -244,6 +251,8 @@ multi-threaded double-booking race (`tests/test_concurrency.py`).
 [`/docs`](https://clinic-booking-api-9ttn.onrender.com/docs) both answer.
 Frontend is live at
 [`https://clinic-booking-frontend-thxz.onrender.com`](https://clinic-booking-frontend-thxz.onrender.com).
+Free-tier services sleep after inactivity — hit the API URL first to wake it
+before testing the frontend.
 
 **Provider:** Render, chosen for its free tier covering a web service, a
 static/web frontend, and managed PostgreSQL in one dashboard, with zero-config

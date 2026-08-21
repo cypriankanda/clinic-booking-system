@@ -18,13 +18,15 @@ Anything you can do in the UI you can also do with `curl` against `/docs`.
 | --- | --- | --- | --- |
 | Python | 3.11+ | `python --version` | 3.13 works too |
 | Node.js | 20+ | `node --version` | for the frontend |
-| Bun (or npm) | latest | `bun --version` | `npm` is fine, just swap commands |
+| npm | comes with Node | `npm --version` | bundled with Node.js |
 | Docker Desktop | latest | `docker --version` | optional — only for the Postgres path |
 | Git | any | `git --version` | |
-| Railway CLI | latest | `railway --version` | `npm i -g @railway/cli`, for deploy |
 
 On Windows use PowerShell and replace `source venv/bin/activate` with
 `venv\Scripts\Activate.ps1`.
+
+Deployment (Section 4) is done through the Render dashboard, not a CLI —
+nothing extra to install there.
 
 ---
 
@@ -60,7 +62,7 @@ alembic upgrade head
 - `alembic current` shows which revision the DB is on; `alembic history` lists all.
 - `alembic downgrade -1` rolls back one step.
 - `migrations/env.py` reads `DATABASE_URL` from `app/core/config.py`, so the same
-  commands work against SQLite locally and Postgres on Railway. Nothing secret
+  commands work against SQLite locally and Postgres on Render. Nothing secret
   is stored in `alembic.ini`.
 
 **B. Skip Alembic** — `app/main.py` runs `Base.metadata.create_all()` on startup,
@@ -116,7 +118,8 @@ docker compose up --build
 
 That starts Postgres + the API on `http://localhost:8000` and seeds it.
 
-To point a local (non-Docker) API at Docker's Postgres instead, put this in `.env`:
+To point a local (non-Docker) API at Docker's Postgres instance instead, put
+this in `.env`:
 
 ```
 DATABASE_URL=postgresql+psycopg2://clinic:clinic@localhost:5432/clinic
@@ -138,9 +141,9 @@ docker compose exec db psql -U clinic -d clinic -c "select * from appointments;"
 From the repo root (a separate terminal — keep uvicorn running):
 
 ```bash
-bun install          # or: npm install
+npm install
 cp .env.example .env # VITE_API_URL=http://localhost:8000
-bun run dev          # or: npm run dev
+npm run dev
 ```
 
 Open `http://localhost:8080`.
@@ -165,7 +168,10 @@ Errors from the API (`409 SLOT_ALREADY_BOOKED`, validation failures, …) surfac
 as toasts using the API's own `error` code and `message`, so the UI never
 invents its own wording.
 
-Build check before deploying: `bun run build`.
+Build check before deploying: `npm run build`. This produces a Nitro
+build — the output you'll deploy is `.output/public` (static client
+assets), with `.output/server` alongside it if you ever move off a
+pure static-site deploy.
 
 ### Backend changes made for the frontend
 
@@ -177,50 +183,76 @@ Build check before deploying: `bun run build`.
 
 ---
 
-## 4. Deploying to Railway
+## 4. Deploying to Render
 
-### Backend
+Deployed live at:
+- API: https://clinic-booking-api-9ttn.onrender.com
+- Frontend: https://clinic-booking-frontend-thxz.onrender.com
 
-1. `railway login`
-2. From `backend/`: `railway init` (create a new project).
-3. Add the database: Railway dashboard → **New → Database → PostgreSQL**.
-4. Set variables on the API service (dashboard → Variables):
-   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` — then **edit the scheme** to
-     `postgresql+psycopg2://…`. Railway hands you `postgresql://…`, which
-     SQLAlchemy accepts but won't pin the driver; being explicit avoids surprises.
-   - `ALLOWED_ORIGINS` = your deployed frontend URL, e.g. `https://your-app.up.railway.app`
+### Backend (Web Service)
+
+1. Render dashboard → **New → Web Service** → connect this GitHub repo,
+   root directory `backend/`.
+2. Add the database first: **New → PostgreSQL** (free tier). Once created,
+   Render gives you an **Internal Database URL** — use that (not the external
+   one) for services in the same Render project, since internal traffic is
+   faster and doesn't count against external bandwidth.
+3. Set environment variables on the API service (dashboard → Environment):
+   - `DATABASE_URL` = the Postgres internal connection string, with the scheme
+     changed to `postgresql+psycopg2://…`. Render gives you `postgresql://…`,
+     which SQLAlchemy accepts but won't pin the driver; being explicit avoids
+     surprises.
+   - `ALLOWED_ORIGINS` = `https://clinic-booking-frontend-thxz.onrender.com`
    - `ENVIRONMENT` = `production`
-5. Start command: `backend/railway.json` sets it to
-   `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`,
-   so every deploy migrates first. (`Procfile` is the fallback.) Binding
-   `0.0.0.0` and `$PORT` is required — `localhost:8000` fails health checks.
-   The health check path is `/health`.
-6. Deploy: `railway up`, then **Settings → Networking → Generate Domain**.
-7. Seed the demo data once against production (migrations already ran on deploy):
+4. **Build command:** `pip install -r requirements.txt`
+5. **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+   Binding `0.0.0.0` and Render's `$PORT` is required — `localhost:8000` fails
+   health checks.
+6. **Release command** (runs before each new instance takes traffic):
+   `alembic upgrade head` — so every deploy migrates first, and a bad
+   migration blocks the deploy instead of shipping half-migrated.
+7. **Health check path:** `/health`.
+8. Deploy. Once live, seed the demo data once via the Render **Shell** tab on
+   the service:
    ```bash
-   railway run python seed.py
+   python seed.py
    ```
-8. Verify: `curl https://<your-domain>/health` and open `/docs`.
+9. Verify: `curl https://clinic-booking-api-9ttn.onrender.com/health` and open
+   `/docs`.
 
-### Frontend
+### Frontend (Static Site)
 
-Build and host the frontend (`bun run build`, then serve `.output/` or your
-static/SSR target), with `VITE_API_URL` set to the Railway API domain
-(`https://<your-domain>`, no trailing slash) at build time. Add that frontend
-URL to the backend's `ALLOWED_ORIGINS` and redeploy the backend.
+1. Render dashboard → **New → Static Site** → connect the same repo, root
+   directory `/` (repo root).
+2. **Build command:** `npm install && npm run build`
+3. **Publish directory:** `.output/public` — this is Nitro's static output
+   folder (confirmed from the actual build log: `.output/nitro.json` +
+   `.output/public`).
+4. Environment variable: `VITE_API_URL` =
+   `https://clinic-booking-api-9ttn.onrender.com` (no trailing slash) — this
+   is baked in at build time, so changing it later requires a rebuild, not
+   just a redeploy.
+5. Auto-deploy on push to `main` is on by default for both services — they
+   deploy independently of each other since they have separate build steps.
 
 ### What to check after deploying
 
 - `GET /health` returns 200 over HTTPS.
 - `GET /doctors` returns 5 doctors (proves migrations + seed ran).
-- Book a slot from the deployed frontend; reload — it persists (proves Postgres,
-  not an ephemeral SQLite file that dies on redeploy).
+- Book a slot from the deployed frontend; reload — it persists (proves
+  Postgres, not an ephemeral SQLite file that dies on redeploy).
 - Browser devtools → Network shows no CORS errors.
-- Railway logs (`railway logs`) are free of tracebacks on startup.
+- Render logs (dashboard → Logs tab) are free of tracebacks on startup.
 - Try booking the same slot twice → `409` with `SLOT_ALREADY_BOOKED`.
-- Put the live URL in the README's "Public URL" line, and add
-  `DEPLOY_HOOK_URL` as a GitHub secret (Railway → Settings → Deploy Hook) so
-  `.github/workflows/ci-cd.yml` triggers deploys on merge to `main`.
+- Add `DEPLOY_HOOK_URL` as a GitHub secret (Render service → Settings →
+  Deploy Hook → copy URL) so `.github/workflows/ci-cd.yml` can trigger a
+  deploy on merge to `main`, independent of Render's own auto-deploy.
+
+### Rollback
+
+Render keeps previous deploys per service — roll back instantly from the
+service's **Events** tab in the dashboard without touching git, or revert the
+merge commit on `main` and let the pipeline redeploy the previous state.
 
 ---
 
@@ -229,10 +261,11 @@ URL to the backend's `ALLOWED_ORIGINS` and redeploy the backend.
 | Symptom | Cause / fix |
 | --- | --- |
 | UI says "API unreachable" | uvicorn not running, or `VITE_API_URL` wrong. `curl http://localhost:8000/health` first. |
-| Browser console: blocked by CORS policy | Add the frontend origin to `ALLOWED_ORIGINS` in `backend/.env`, restart uvicorn. |
+| Browser console: blocked by CORS policy | Add the frontend origin to `ALLOWED_ORIGINS` in `backend/.env` (or the Render environment variable), restart/redeploy. |
 | `no such table: doctors` | Schema not created — run `alembic upgrade head` (or just start the API), then `python seed.py`. |
 | Empty slot grid all day | It's a weekend (doctors work Mon–Fri), the day is fully booked, or every remaining slot is inside the 1-hour notice window. Try tomorrow's date. |
 | `422` on booking | `slot_start` must be timezone-aware ISO 8601 on a :00/:30 boundary. The UI only ever sends values the API handed back. |
 | `Target database is not up to date` (Alembic) | Run `alembic upgrade head` before `alembic revision --autogenerate`. |
 | `psycopg2` install fails | Use `psycopg2-binary` (already pinned) and make sure the venv is active. |
-| Railway health check fails | Start command must use `--host 0.0.0.0 --port $PORT`. |
+| Render health check fails | Start command must use `--host 0.0.0.0 --port $PORT`. |
+| Render free-tier service is slow to respond first request | Free web services spin down after inactivity; the first request after idle can take ~30-60s to wake it up. |

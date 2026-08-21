@@ -52,11 +52,11 @@ export const Route = createFileRoute("/")({
         content:
           "Browse live doctor availability, book a 30-minute appointment, then cancel or reschedule it. Frontend for the Clinic Booking REST API.",
       },
-      { property: "og:title", content: "Clinic Booking — Book a 30-minute doctor slot" },
+      { property: "og:title", content: "Clinic Booking  Book a 30-minute doctor slot" },
       {
         property: "og:description",
         content:
-          "Live doctor availability, instant booking, cancel and reschedule — powered by the Clinic Booking API.",
+          "Live doctor availability, instant booking, cancel and reschedule  powered by the Clinic Booking API.",
       },
     ],
   }),
@@ -184,7 +184,7 @@ function Index() {
           </h1>
           <p className="max-w-xl text-sm text-primary-foreground/85">
             Availability is computed live from each doctor&apos;s working hours, minus what&apos;s
-            already booked — with a one-hour minimum notice applied.
+            already booked  with a one-hour minimum notice applied.
           </p>
           <ApiStatus />
         </div>

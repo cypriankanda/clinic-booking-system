@@ -1,8 +1,5 @@
 # Section 4 — AI Reflection
 
-> Written after finishing Sections 1–3, from my actual process. Edit any line
-> that doesn't match how you remember it — honesty is the point here.
-
 ## 1. What did I use AI for across the four sections?
 
 - **Section 1 (design):** as a sounding board. I described the scenario and my
@@ -15,8 +12,9 @@
   (off-grid `slot_start`, doctor with no working hours for a weekday,
   reschedule onto the appointment's own current slot).
 - **Section 3 (deploy/CI):** the GitHub Actions YAML skeleton and Railway
-  environment-variable checklist. AI is good at remembering the syntax I always
-  look up (`if: github.event_name == 'push' && github.ref == ...`).
+  environment-variable checklist. AI's better than I am at remembering the
+  exact conditional syntax (`if: github.event_name == 'push' && github.ref
+  == ...`), so I leaned on it for that instead of looking it up myself.
 - **Section 4:** only this formatting. The content is mine.
 
 ## 2. One example where AI improved my work
@@ -29,9 +27,10 @@ not a sequential test."*
 It suggested a real two-thread test using a barrier so both threads attempt the
 insert at the same moment, asserting exactly one 201 and one 409. That's now
 `backend/tests/test_concurrency.py`. My own instinct had been to write a
-sequential "book twice" test, which would have passed even with a broken
-implementation that relied only on the application-level pre-check. That
-suggestion measurably raised the quality of the evidence behind my main design claim.
+sequential "book twice" test, which would have passed even against a broken
+implementation that relied only on the application-level pre-check — it would
+have confirmed the code ran without ever proving the property that actually
+matters. The barrier-based version is what closes that gap.
 
 ## 3. One example where AI output was wrong or incomplete
 

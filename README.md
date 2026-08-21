@@ -41,29 +41,29 @@ src/       React frontend (TanStack Start) — calls the API over HTTP only
 
 ## Section 1 — System Design
 
-```
-                    INTERNET
-                       │
-                       ▼
-        ┌────────────────────────────┐
-        │       Render Frontend      │
-        │  clinic-booking-frontend   │
-        │          .onrender.com     │
-        └──────────────┬─────────────┘
-                       │  HTTPS API requests
-                       ▼
-        ┌────────────────────────────┐
-        │       Render Backend       │
-        │  clinic-booking-api        │
-        │          .onrender.com     │
-        │  FastAPI + Uvicorn         │
-        └──────────────┬─────────────┘
-                       │  PostgreSQL
-                       ▼
-        ┌────────────────────────────┐
-        │    Render PostgreSQL DB    │
-        │     clinic-booking-db      │
-        └────────────────────────────┘
+```mermaid
+flowchart TD
+    U(["🌐 Internet / User"]) --> FE
+
+    subgraph Render["☁️ Render — Free Tier"]
+        direction TB
+        FE["🖥️ Frontend — Static Site<br/>clinic-booking-frontend<br/>.onrender.com"]
+        API["⚙️ Backend — Web Service<br/>clinic-booking-api<br/>.onrender.com<br/>FastAPI + Uvicorn"]
+        DB[("🗄️ PostgreSQL<br/>clinic-booking-db")]
+
+        FE -- "HTTPS API requests" --> API
+        API -- "SQLAlchemy" --> DB
+    end
+
+    classDef internetStyle fill:#6366f1,stroke:#4338ca,color:#fff,stroke-width:2px
+    classDef frontendStyle fill:#3b82f6,stroke:#1d4ed8,color:#fff,stroke-width:2px
+    classDef backendStyle fill:#10b981,stroke:#047857,color:#fff,stroke-width:2px
+    classDef dbStyle fill:#f59e0b,stroke:#b45309,color:#fff,stroke-width:2px
+
+    class U internetStyle
+    class FE frontendStyle
+    class API backendStyle
+    class DB dbStyle
 ```
 
 ### The scenario, restated
@@ -76,33 +76,75 @@ grow.
 
 ### Models
 
+```mermaid
+erDiagram
+    DOCTOR ||--o{ WORKING_HOURS : has
+    DOCTOR ||--o{ APPOINTMENT : "is booked for"
+    PATIENT ||--o{ APPOINTMENT : books
+
+    DOCTOR {
+        int id PK
+        string name
+        string specialty "nullable"
+    }
+    WORKING_HOURS {
+        int id PK
+        int doctor_id FK
+        int day_of_week
+        time start_time
+        time end_time
+    }
+    PATIENT {
+        int id PK
+        string name
+        string email UK
+    }
+    APPOINTMENT {
+        int id PK
+        int doctor_id FK
+        int patient_id FK
+        datetime slot_start
+        datetime slot_end
+        string status "booked or cancelled"
+        string cancellation_reason
+        datetime created_at
+        datetime updated_at
+    }
 ```
-Doctor            id, name, specialty (nullable)
-WorkingHours      id, doctor_id (FK), day_of_week, start_time, end_time
-                  UNIQUE(doctor_id, day_of_week)
-Patient           id, name, email (unique)
-Appointment       id, doctor_id (FK), patient_id (FK),
-                  slot_start, slot_end, status (booked|cancelled),
-                  cancellation_reason, created_at, updated_at
-                  UNIQUE(doctor_id, slot_start) WHERE status = 'booked'
-```
+
+Two constraints matter more than the columns: `WorkingHours` is
+`UNIQUE(doctor_id, day_of_week)` — one schedule row per doctor per weekday —
+and `Appointment` has a **partial** unique index,
+`UNIQUE(doctor_id, slot_start) WHERE status = 'booked'`, which is the actual
+double-booking guard (see [Key decisions](#key-decisions-and-trade-offs)).
 
 ### Components
 
-```
-Client (React UI / curl / Swagger)
-  |
-  v
-FastAPI routers (appointments / doctors / patients)
-  |  - HTTP <-> service translation only
-  v
-BookingService
-  |  - all business rules + concurrency handling
-  v
-Repositories (Appointment / Doctor / Patient)
-  |  - queries only, no business logic
-  v
-SQLAlchemy models -> PostgreSQL (prod) / SQLite (local & tests)
+```mermaid
+flowchart TD
+    C(["👤 Client<br/>React UI / curl / Swagger"]) --> R
+
+    R["🚦 FastAPI Routers<br/>appointments / doctors / patients<br/>HTTP ↔ service translation only"] --> S
+
+    S["🧠 BookingService<br/>all business rules + concurrency handling"] --> Repo
+
+    Repo["📦 Repositories<br/>Appointment / Doctor / Patient<br/>queries only, no business logic"] --> M
+
+    M["🔗 SQLAlchemy Models"] --> DB[("🗄️ PostgreSQL (prod)<br/>SQLite (local & tests)")]
+
+    classDef clientStyle fill:#6366f1,stroke:#4338ca,color:#fff,stroke-width:2px
+    classDef routerStyle fill:#3b82f6,stroke:#1d4ed8,color:#fff,stroke-width:2px
+    classDef serviceStyle fill:#8b5cf6,stroke:#6d28d9,color:#fff,stroke-width:2px
+    classDef repoStyle fill:#10b981,stroke:#047857,color:#fff,stroke-width:2px
+    classDef modelStyle fill:#f59e0b,stroke:#b45309,color:#fff,stroke-width:2px
+    classDef dbStyle fill:#ef4444,stroke:#b91c1c,color:#fff,stroke-width:2px
+
+    class C clientStyle
+    class R routerStyle
+    class S serviceStyle
+    class Repo repoStyle
+    class M modelStyle
+    class DB dbStyle
 ```
 
 Service-layer exceptions (`NotFoundError`, `ValidationFailedError`,

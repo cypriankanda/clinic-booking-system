@@ -5,7 +5,7 @@ slots — plus a React frontend that consumes it. Built for the Savannah
 Informatics backend take-home assessment.
 
 - **Public URL (API):** _add after deploying — e.g._ `https://<your-app>.up.railway.app` (`/docs` for Swagger)
-- **Public URL (frontend):** _add after publishing_
+- **Public URL (frontend):** _add after deploying_
 - **Section 4 reflection:** [`AI_REFLECTION.md`](./AI_REFLECTION.md)
 - **Step-by-step local + deploy guide:** [`SETUP.md`](./SETUP.md)
 

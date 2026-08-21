@@ -188,7 +188,7 @@ Build check before deploying: `bun run build`.
    - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` — then **edit the scheme** to
      `postgresql+psycopg2://…`. Railway hands you `postgresql://…`, which
      SQLAlchemy accepts but won't pin the driver; being explicit avoids surprises.
-   - `ALLOWED_ORIGINS` = your deployed frontend URL, e.g. `https://your-app.lovable.app`
+   - `ALLOWED_ORIGINS` = your deployed frontend URL, e.g. `https://your-app.up.railway.app`
    - `ENVIRONMENT` = `production`
 5. Start command: `backend/railway.json` sets it to
    `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`,
@@ -204,9 +204,10 @@ Build check before deploying: `bun run build`.
 
 ### Frontend
 
-Publish this Lovable project, then set `VITE_API_URL` to the Railway domain
-(`https://<your-domain>`, no trailing slash) and rebuild. Add that published
-frontend URL to the backend's `ALLOWED_ORIGINS` and redeploy the backend.
+Build and host the frontend (`bun run build`, then serve `.output/` or your
+static/SSR target), with `VITE_API_URL` set to the Railway API domain
+(`https://<your-domain>`, no trailing slash) at build time. Add that frontend
+URL to the backend's `ALLOWED_ORIGINS` and redeploy the backend.
 
 ### What to check after deploying
 
